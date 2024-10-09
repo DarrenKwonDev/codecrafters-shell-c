@@ -3,6 +3,39 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#define MAX_PATH 1024
+#define MAX_COMMAND 256
+
+
+int find_command(const char* command, char* result) {
+    char* path = getenv("PATH");
+    if (path == NULL) {
+        return 0;
+    }
+
+    char* path_copy = strdup(path); // internal malloc. free 해야 함.
+    char* dir = strtok(path_copy, ":");
+
+    while (dir != NULL) {
+        char full_path[MAX_PATH];
+        snprintf(full_path, sizeof(full_path), "%s/%s", dir, command);
+
+        if (access(full_path, X_OK | F_OK) == 0) {
+            strcpy(result, full_path);
+            free(path_copy);
+            return 1;
+        }
+
+        dir = strtok(NULL, ":");
+    }
+
+    free(path_copy);
+    return 0;
+}
+
 
 int main() {
   setbuf(stdin, NULL); 
@@ -42,14 +75,20 @@ int main() {
     if (strncmp(input, "type", 4) == 0) {
       char* sep = strchr(input, ' ');
       sep++;
-      char buf[100];
-      sprintf(buf, "%s", sep);
-      if (strncmp(buf, "type", 4) == 0 || 
-          strncmp(buf, "echo", 4) == 0 || 
-          strncmp(buf, "exit", 4) == 0) {
-          fprintf(stdout, "%s is a shell builtin\n", buf);
+      char command[MAX_COMMAND];
+      strcpy(command, sep);
+      
+      if (strncmp(command, "type", 4) == 0 || 
+          strncmp(command, "echo", 4) == 0 || 
+          strncmp(command, "exit", 4) == 0) {
+          fprintf(stdout, "%s is a shell builtin\n", command);
         } else {
-          fprintf(stdout, "%s: not found\n", buf);
+          char result[MAX_PATH];
+          if (find_command(command, result)) {
+              fprintf(stdout, "%s is %s\n", command, result);
+          } else {
+              fprintf(stdout, "%s: not found\n", command);
+          }
         }
 
       continue;
