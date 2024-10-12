@@ -82,6 +82,7 @@ int main() {
             char* command = input + 5;
             if (strcmp(command, "exit") == 0 ||
                 strcmp(command, "echo") == 0 ||
+                strcmp(command, "pwd") == 0 ||
                 strcmp(command, "type") == 0) {
                 printf("%s is a shell builtin\n", command);
             } else {
@@ -92,6 +93,13 @@ int main() {
                     printf("%s: not found\n", command);
                 }
             }
+            continue;
+        }
+
+        if (strncmp(input, "pwd", 3) == 0) {
+            char pwd_buf[1024];
+            getcwd(pwd_buf, sizeof(pwd_buf));
+            printf("%s\n", pwd_buf);
             continue;
         }
 
